@@ -77,12 +77,15 @@ function build_binutils() {
       "CFLAGS=-DHAVE_PSIGNAL=1 -DELIDE_CODE -Os" \
       "LDFLAGS=$ldflags -sUSE_ZLIB=1"
 
-    path="gas/as-new"
-    exe_name=$(basename $path)
-
     install_path="$output_dir/$build_type"
-    sed -i "s/\"$exe_name.wasm\"/\"$build_target.wasm\"/g" "$path"
-    install -D "$path" "$install_path/$build_target.js"
+
+    # gas
+    sed -i "s/\"as-new.wasm\"/\"$build_target-as.wasm\"/g" "gas/as-new"
+    install -D "gas/as-new" "$install_path/$build_target-as.js"
+
+    # ls
+    sed -i "s/\"ld-new.wasm\"/\"$build_target-ld.wasm\"/g" "ld/ld-new"
+    install -D "ld/ld-new" "$install_path/$build_target-ld.js"
 }
 
 for target in $(echo "$targets" | tr "," "$IFS"); do
