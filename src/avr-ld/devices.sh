@@ -2,11 +2,11 @@
 # Supported AVR devices for avr-ld
 #
 # This file is the single source of truth for which chips are compiled into
-# the avr-ld.js WebAssembly bundle.  Edit it to add or remove devices.
+# the avr-ld.js bundle.  Edit it to add or remove devices.
 #
 # Format: LABEL:MCU:AVR_ARCH_FAMILY:CRT_OBJ
-#   LABEL           Human-readable name, becomes a TypeScript union member
-#   MCU             MCU identifier used by GAS (-mmcu) and avr-libc
+#   LABEL           Human-readable name used in docs and device info
+#   MCU             MCU identifier used by avr-as (-mmcu) and avr-libc
 #   AVR_ARCH_FAMILY avr-libc architecture family (subdirectory under /usr/lib/avr/lib/)
 #   CRT_OBJ         Device-specific startup object file (crt<mcu>.o)
 #

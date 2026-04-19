@@ -1,68 +1,71 @@
-# binutils-wasm
+# avr-wasm
 
-![Website](https://img.shields.io/website?url=https%3A%2F%2Fbinutils-wasm.vercel.app%2F&up_message=online&down_message=offline&style=for-the-badge&logo=vercel&label=frontend)
+AVR GNU Assembler (`avr-as`), Linker (`avr-ld` + avr-libc), and Binutils (`objcopy`, `objdump`, …) compiled to WebAssembly using [Emscripten](https://emscripten.org/).
 
-![CI](https://github.com/mnixry/binutils-wasm/actions/workflows/build.yml/badge.svg) ![NPM Version of GAS](https://img.shields.io/npm/v/%40binutils-wasm%2Fgas?label=%40binutils-wasm%2Fgas) ![NPM Version of Binutils](https://img.shields.io/npm/v/%40binutils-wasm%2Fbinutils?style=flat&label=%40binutils-wasm%2Fbinutils)
+Each tool is a self-contained `.js` file with the WASM binary embedded — no separate `.wasm` file, no server, no native AVR toolchain required.
 
-This project is divided into several components:
+## Outputs
 
-- A WebAssembly version of GNU Binutils, available as an NPM package for use in Node.js or browser environments. (See [gas](https://www.npmjs.com/package/@binutils-wasm/gas) and [binutils](https://www.npmjs.com/package/@binutils-wasm/binutils))
-- A command-line tool based on the aforementioned package, providing a variety of platform-specific Binutils for use on any device that supports Node.js (work in progress).
-- A static web page built on the aforementioned package that offers assembly and disassembly for multiple architectures, accessible directly through a web browser. (This README is about this component)
+| File | Description |
+|------|-------------|
+| `avr-as.js` | GNU Assembler for AVR — assembles `.s` → `.o` |
+| `avr-ld.js` | GNU Linker for AVR with avr-libc embedded — links `.o` → `.elf` |
+| `objcopy.js` | Converts `.elf` → Intel HEX (`.hex`) |
+| `objdump.js` | Disassembles / inspects ELF binaries |
+| `nm.js`, `readelf.js`, `size.js`, … | Additional binutils tools |
 
-## Introduction
+## Getting the files
 
-This is a highly efficient, purely static website that offers assembly and disassembly for a variety of architectures. The site is built using [Mantine](https://mantine.dev/) and [Vite](https://vitejs.dev/).
+**Latest release:** download individual `.js` files from the [Releases page](../../releases/latest).
 
-## Features
-
-- Assembly and disassembly for multiple architectures
-- Exceptionally fast execution speed, nearly real-time
-- No server-side code, eliminating any potential security concerns
-- Parallels the `asm` and `disasm` functions in PwnTools
-
-## Screenshots
-
-![Assembler](https://github.com/mnixry/binutils-wasm/assets/32300164/0042cfee-99ab-489d-82d4-78e4613adc89)
-![Disassembler](https://github.com/mnixry/binutils-wasm/assets/32300164/6174e6ba-e79c-4467-acc8-f05a5a32cb50)
+**Build manually:** trigger the [Build workflow](../../actions/workflows/build.yml) via *Run workflow* — the compiled files are saved as a workflow artifact.
 
 ## Usage
 
-To use it, simply visit the website hosted on [Vercel](https://binutils-wasm.vercel.app/).
+Each file exposes an Emscripten module factory (`Module()`). Load the `.js` file in any JavaScript environment (browser, WKWebView, Node.js) and call `Module()` to get an instance with a virtual filesystem.
 
-### Building for Offline Use
+See [`docs/AVR_TOOLCHAIN.md`](docs/AVR_TOOLCHAIN.md) for a full end-to-end guide covering the `.s → .o → .elf → .hex` pipeline.
 
-To build for offline use, clone the repository and run the following commands. Note that this process assumes you are operating on a Unix-like system and have Docker installed (to build the WebAssembly binary).
+## Supported devices (avr-ld)
 
-```bash
-# in the root directory of the repository
-pnpm install
-# This process will take about 1-2 hours
-pnpm build
+| Label | MCU | avr-libc arch family |
+|-------|-----|----------------------|
+| `arduino-uno` | ATmega328P | avr5 |
+| `arduino-nano` | ATmega328P | avr5 |
+| `arduino-mega` | ATmega2560 | avr6 |
+| `attiny85` | ATtiny85 | avr25 |
+
+To add more devices edit [`src/avr-ld/devices.sh`](src/avr-ld/devices.sh) (one line per device) and rebuild.
+
+## Repository layout
+
+```
+src/
+  gas/          Dockerfile + build.sh → avr-as.js
+  binutils/     Dockerfile + build.sh → objcopy.js, objdump.js, …
+  avr-ld/       Dockerfile + build.sh + devices.sh → avr-ld.js
+docs/
+  AVR_TOOLCHAIN.md   End-to-end pipeline tutorial
 ```
 
-Once the build process is complete, the static files can be found in the `./frontend/dist` directory.
+## Building locally
 
-## Acknowledgments
+Docker is the only dependency.
 
-- [Mantine](https://mantine.dev/) and [Vite](https://vitejs.dev/) for the tools used to build this website
-- [EMScripten](https://emscripten.org/) for the tools to compile Binutils to WebAssembly
-- [GNU Binutils](https://www.gnu.org/software/binutils/) for the tools to assemble and disassemble binary files
-- [PwnTools](https://github.com/Gallopsled/pwntools) for providing a reference to implement the assembler and disassembler
+```bash
+# avr-as
+docker buildx build --output=type=local,dest=dist src/gas
+
+# binutils (objcopy, objdump, …)
+docker buildx build --output=type=local,dest=dist src/binutils
+
+# avr-ld + avr-libc
+docker buildx build --output=type=local,dest=dist src/avr-ld
+```
+
+Compiled `.js` files appear in `dist/`.
 
 ## License
 
-This project is licensed under the GPLv3 License in accordance with the license of GNU Binutils. For more details, see the [LICENSE](./LICENSE) file.
+GPL-3.0-or-later — in accordance with the license of GNU Binutils.
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.

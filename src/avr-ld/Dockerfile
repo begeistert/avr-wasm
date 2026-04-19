@@ -14,4 +14,4 @@ COPY ./build.sh /src/build.sh
 RUN chmod +x /src/build.sh && ./build.sh /dist
 
 FROM scratch AS export
-COPY --from=builder /dist /dist
+COPY --from=builder /dist/ /

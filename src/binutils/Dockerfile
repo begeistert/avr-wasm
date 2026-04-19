@@ -5,7 +5,7 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ARG BRANCH=master
+ARG BRANCH=binutils-2_45-branch
 RUN git clone --depth 1 --branch ${BRANCH} git://sourceware.org/git/binutils-gdb.git /src
 
 WORKDIR /src
@@ -13,4 +13,4 @@ COPY ./build.sh /src/build.sh
 RUN ./build.sh /dist
 
 FROM scratch AS export
-COPY --from=builder /dist /dist
+COPY --from=builder /dist/ /
