@@ -5,7 +5,9 @@ This guide shows how to use the compiled `.js` tools (`avr-as.js`, `avr-ld.js`, 
 1. **Desktop** — Node.js (Windows / macOS / Linux)
 2. **MAUI app** — .NET MAUI with a `WKWebView` (WebKit) on macOS / iOS, or `WebView2` on Windows
 
-All tools are self-contained single-file Emscripten modules.  The WASM binary is base64-encoded inside each `.js` file, so there are no extra assets to manage.
+All tools are self-contained single-file Emscripten modules.  The WASM binary is base64-encoded inside each `.js` file, so there are no extra assets to manage **for the tools themselves**.
+
+The linker (`avr-ld.js`) additionally needs the AVR C runtime objects and libraries (`crt<mcu>.o`, `libc.a`, `libm.a`, …).  These are shipped alongside `avr-ld.js` as a sidecar `avr-libc/<arch>/` tree (the same layout used by a native `avr-gcc` install) and must be loaded into Emscripten's in-memory filesystem before invoking the linker.  Embedding them directly into `avr-ld.js` is not possible because the binutils `ld` link rule goes through libtool, which silently strips emcc driver flags such as `--embed-file`.
 
 ---
 
@@ -24,7 +26,15 @@ your-project/
 ├── avr-as.js
 ├── avr-ld.js
 ├── objcopy.js
-└── assemble.mjs   ← your code
+├── avr-libc/             ← sidecar tree shipped with avr-ld.js
+│   ├── avr5/
+│   │   ├── libc.a
+│   │   ├── libm.a
+│   │   ├── crtn.o
+│   │   └── crtm328p.o    ← per-device CRT object
+│   ├── avr6/…
+│   └── avr25/…
+└── assemble.mjs          ← your code
 ```
 
 ### Full pipeline example (`assemble.mjs`)
@@ -79,7 +89,18 @@ await createAvrLd({
     `-L${libDir}`, "-lc",
     "-o", "program.elf",
   ],
-  preRun:  [(m) => m.FS.writeFile("program.o", objectBytes)],
+  preRun: [(m) => {
+    // Mirror the avr-libc sidecar tree into MEMFS so the linker can
+    // resolve -L/usr/lib/avr/lib/<arch> and the crt object path.
+    m.FS.mkdirTree(libDir);
+    for (const name of [crtObject, "crtn.o", "libc.a", "libm.a"]) {
+      m.FS.writeFile(
+        `${libDir}/${name}`,
+        readFileSync(`./avr-libc/${archFamily}/${name}`),
+      );
+    }
+    m.FS.writeFile("program.o", objectBytes);
+  }],
   postRun: [(m) => { elfBytes = m.FS.readFile("program.elf"); }],
 });
 
@@ -133,7 +154,15 @@ MyMauiApp/
         ├── avr-as.js
         ├── avr-ld.js
         ├── objcopy.js
-        └── pipeline.js
+        ├── pipeline.js
+        └── avr-libc/
+            ├── avr5/
+            │   ├── libc.a
+            │   ├── libm.a
+            │   ├── crtn.o
+            │   └── crtm328p.o
+            ├── avr6/…
+            └── avr25/…
 ```
 
 ### 2.2 Create the WebView page (`AvrPage.xaml`)
@@ -240,7 +269,17 @@ window.runPipeline = async function (asmSource) {
       `-L${libDir}`, "-lc",
       "-o", "program.elf",
     ],
-    preRun:  [(m) => m.FS.writeFile("program.o", objectBytes)],
+    preRun: [async (m) => {
+      // Fetch the avr-libc sidecar files (shipped next to avr-ld.js)
+      // and inject them into MEMFS at the path the linker expects.
+      m.FS.mkdirTree(libDir);
+      for (const name of ["crtm328p.o", "crtn.o", "libc.a", "libm.a"]) {
+        const r = await fetch(`avr-libc/avr5/${name}`);
+        m.FS.writeFile(`${libDir}/${name}`,
+          new Uint8Array(await r.arrayBuffer()));
+      }
+      m.FS.writeFile("program.o", objectBytes);
+    }],
     postRun: [(m) => { elfBytes = m.FS.readFile("program.elf"); }],
   });
 
@@ -296,7 +335,7 @@ automatically when the `WebView` control appears on screen.
 
 | Topic | Guidance |
 |-------|----------|
-| **Offline use** | All three `.js` files use `-sSINGLE_FILE=1` — the WASM binary is embedded.  No network access is needed after the initial bundle. |
+| **Offline use** | All three `.js` files use `-sSINGLE_FILE=1` — the WASM binary is embedded.  The avr-libc sidecar (`avr-libc/<arch>/`) ships next to `avr-ld.js` and is loaded at runtime; no network access is needed once both are in the app bundle. |
 | **Memory** | The AVR tools are small; each module typically uses < 20 MB of Wasm memory.  Increase with `-sINITIAL_MEMORY` / `-sMAXIMUM_MEMORY` if needed (requires a custom build). |
 | **Multiple runs** | Create a fresh `Module()` instance for each invocation; Emscripten modules are not designed for re-entrant use. |
 | **Error handling** | Pass a `printErr` callback to capture diagnostic output.  `callMain` returns the process exit code. |
