@@ -52,26 +52,34 @@ done
 
 sed -i '/^development=/s/true/false/' bfd/development.sh
 
-# Prevent AM_PROG_AR from setting AR="emar --plugin liblto_plugin.so".
+# Note on the libiberty / libsframe / zlib sub-configure failure
+# ----------------------------------------------------------------
+# Earlier versions of this script passed all the emscripten-specific
+# link flags (-sMODULARIZE=1, -sSINGLE_FILE=1, --embed-file ...) as
+# `LDFLAGS=` on the `emmake make` command line.  Make propagates that
+# LDFLAGS into every sub-configure (libsframe, zlib, libiberty), where
+# the very first thing AC_PROG_CC does is build a `conftest` to verify
+# the C compiler can produce executables.  With the full emscripten
+# LDFLAGS in place, that conftest link fails (the embed-file machinery
+# and SINGLE_FILE wrapping are not appropriate for a tiny conftest),
+# which sets `gcc_no_link=yes` inside the configure shell.  After that,
+# `GCC_NO_EXECUTABLES` (called at the top of libiberty/configure.ac)
+# turns every subsequent `AC_LINK_IFELSE` into a fatal
+#     configure: error: Link tests are not allowed after GCC_NO_EXECUTABLES.
+# The cascade we observed in CI:
+#   configure-libsframe   -> "C compiler cannot create executables"
+#   configure-zlib        -> "Link tests are not allowed ..."
+#   configure-libiberty   -> "Link tests are not allowed ..." (fatal)
 #
-# llvm-ar (emar) advertises "--plugin=<string>  ignored for compatibility",
-# so the automake AM_PROG_AR probe succeeds and sets
-#   AR="emar --plugin liblto_plugin.so"
-# But liblto_plugin.so does not exist in emscripten.  Every subsequent
-# AC_LINK_IFELSE step that needs to create a test archive then fails, which
-# causes GCC_NO_EXECUTABLES to fire and makes AC_SEARCH_LIBS abort fatally
-# inside libiberty's sub-configure (triggered by make, not by emconfigure).
+# We only need the emscripten link flags for the FINAL `ld-new`
+# executable, so build everything first with a plain LDFLAGS, then
+# relink just `ld/ld-new` with the full set of emscripten flags.
 #
-# We need am_cv_ar_has_plugin=no to be visible to EVERY configure script,
-# including the libiberty sub-configure that make spawns as a fresh process.
-# Exporting the variable alone is insufficient for some autoconf versions
-# that do not import *_cv_* env vars into the cache automatically.  Writing
-# to CONFIG_SITE guarantees the value is sourced at the very top of every
-# ./configure script before any AC_CACHE_VAL check runs.
+# The only remaining configure-time hint we keep is am_cv_ar_has_plugin
+# to silence the (harmless) automake AM_PROG_AR --plugin probe noise.
 _emsc_site=$(mktemp /tmp/emscripten-site.XXXXXX)
 printf 'am_cv_ar_has_plugin=no\n' > "$_emsc_site"
 export CONFIG_SITE="$_emsc_site"
-export am_cv_ar_has_plugin=no
 
 work_dir=$(mktemp -d -t "avr-ld.XXXXXX")
 cd "$work_dir"
@@ -94,8 +102,18 @@ emconfigure "$source_dir/configure" \
     --disable-sim \
     --disable-werror
 
+# Phase 1: build all libraries and ld with default LDFLAGS so that
+# sub-configures (libsframe, zlib, libiberty, bfd) succeed.
 emmake make -O -j"$(nproc)" \
+    "CFLAGS=-DHAVE_PSIGNAL=1 -DELIDE_CODE -Os"
+
+# Phase 2: relink ld/ld-new with the full emscripten link flags so the
+# resulting JavaScript module is self-contained, exposes FS, and embeds
+# the avr-libc archives / startup objects required at runtime.
+rm -f ld/ld-new
+emmake make -O -j"$(nproc)" -C ld \
     "CFLAGS=-DHAVE_PSIGNAL=1 -DELIDE_CODE -Os" \
-    "LDFLAGS=-sMODULARIZE=1 -sFORCE_FILESYSTEM=1 -sEXPORTED_RUNTIME_METHODS=FS -sSINGLE_FILE=1 -sALLOW_MEMORY_GROWTH=1 $embed_flags"
+    "LDFLAGS=-sMODULARIZE=1 -sFORCE_FILESYSTEM=1 -sEXPORTED_RUNTIME_METHODS=FS -sSINGLE_FILE=1 -sALLOW_MEMORY_GROWTH=1 $embed_flags" \
+    ld-new
 
 install -D "ld/ld-new" "$output_dir/avr-ld.js"
