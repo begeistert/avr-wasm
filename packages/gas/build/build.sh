@@ -51,7 +51,6 @@ common_configure_flags=(
     "--disable-gprof"
     "--disable-nls"
     "--disable-binutils"
-    "--disable-ld"
     "--disable-gdb"
     "--disable-gdbserver"
     "--disable-libdecnumber"
@@ -76,7 +75,7 @@ function build_binutils() {
 
     emmake make -O \
       "CFLAGS=-DHAVE_PSIGNAL=1 -DELIDE_CODE -Os" \
-      "LDFLAGS=$ldflags"
+      "LDFLAGS=$ldflags -sUSE_ZLIB=1"
 
     path="gas/as-new"
     exe_name=$(basename $path)
