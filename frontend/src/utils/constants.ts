@@ -6,12 +6,11 @@ import { ProcessorBits } from "../components/ProcessorBitsSegmentedControl";
 type SupportedTargets = Parameters<typeof gasLoader>[0];
 
 export const ASSEMBLE_PUBLIC_PREFIX = [
-  '.section .shellcode,"awx"',
-  ".global _start",
-  ".global __start",
+  ".arch avr5",
+  ".text",
+  ".global main",
   "",
-  "_start:",
-  "__start:",
+  "main:",
 ] as const;
 
 export const ASSEMBLERS_MAP: Record<
@@ -24,91 +23,10 @@ export const ASSEMBLERS_MAP: Record<
     asmPrefix?: string[];
   }
 > = {
-  i386: {
-    target: "i386-linux-gnu",
-    acceptBits: 32,
-    paramsFactory: ({ b }) => [`-${b}`],
-    asmPrefix: [".intel_syntax noprefix", ".p2align 0"],
-  },
-  x86_64: {
-    target: "x86_64-linux-gnu",
-    acceptBits: 64,
-    paramsFactory: ({ b }) => [`-${b}`],
-    asmPrefix: [".intel_syntax noprefix", ".p2align 0"],
-  },
-  ARMv7: {
-    target: "armv7-linux-gnueabihf",
-    acceptEndianness: "little",
-    paramsFactory: ({ e }) => [e === "big" ? "-EB" : "-EL"],
-    asmPrefix: [".syntax unified", ".arch armv7-a", ".arm", ".p2align 2"],
-  },
-  ARM64: {
-    target: "aarch64-linux-gnu",
-    acceptEndianness: "little",
-    paramsFactory: ({ e }) => [e === "big" ? "-EB" : "-EL"],
-  },
-  MIPS: {
-    target: "mips-linux-gnu",
-    acceptEndianness: "big",
-    acceptBits: 32,
-    paramsFactory: ({ e, b }) => [e === "big" ? "-EB" : "-EL", `-${b}`],
-    asmPrefix: [".set mips2", ".set noreorder", ".p2align 2"],
-  },
-  MIPS64: {
-    target: "mips64-linux-gnuabi64",
-    acceptEndianness: "big",
-    acceptBits: 64,
-    paramsFactory: ({ e, b }) => [e === "big" ? "-EB" : "-EL", `-${b}`],
-  },
-  SPARC: {
-    target: "sparc-linux-gnu",
-    acceptEndianness: "big",
-    acceptBits: 32,
-    paramsFactory: ({ e, b }) => [e === "big" ? "-EB" : "-EL", `-${b}`],
-  },
-  SPARC64: {
-    target: "sparc64-linux-gnu",
-    acceptEndianness: "big",
-    acceptBits: 64,
-    paramsFactory: ({ e, b }) => [e === "big" ? "-EB" : "-EL", `-${b}`],
-  },
-  PowerPC: {
-    target: "powerpc-linux-gnu",
-    acceptEndianness: "big",
-    acceptBits: 32,
-    paramsFactory: ({ e, b }) => [
-      e === "big" ? "-mbig" : "-mlittle",
-      `-mppc${b}`,
-    ],
-  },
-  PowerPC64: {
-    target: "powerpc64-linux-gnu",
-    acceptEndianness: "big",
-    acceptBits: 64,
-    paramsFactory: ({ e, b }) => [
-      e === "big" ? "-mbig" : "-mlittle",
-      `-mppc${b}`,
-    ],
-  },
-  IA64: {
-    target: "ia64-linux-gnu",
-    acceptEndianness: "big",
-    paramsFactory: ({ e }) => [e === "big" ? "-mbe" : "-mle"],
-  },
-  RISC_V32: {
-    target: "riscv32-linux-gnu",
-    paramsFactory: () => ["-march=rv32gc", "-mabi=ilp32"],
-  },
-  RISC_V64: {
-    target: "riscv64-linux-gnu",
-    paramsFactory: () => ["-march=rv64gc", "-mabi=lp64"],
-  },
-  LoongArch32: {
-    target: "loongarch32-linux-gnu",
-    paramsFactory: () => [],
-  },
-  LoongArch64: {
-    target: "loongarch64-linux-gnu",
+  AVR: {
+    target: "avr",
+    // AVR is neither endianness- nor bits-selectable; controls are hidden when
+    // acceptEndianness / acceptBits are undefined.
     paramsFactory: () => [],
   },
 };

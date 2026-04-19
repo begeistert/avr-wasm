@@ -53,7 +53,7 @@ export default function AssemblerPage(props: StackProps) {
   const [containerRef, dimensions] = useResizeObserver();
 
   const [architecture, setArchitecture] =
-    useState<keyof typeof ASSEMBLERS_MAP>("x86_64");
+    useState<keyof typeof ASSEMBLERS_MAP>("AVR");
   const architectureInfo = useMemo(
     () => ASSEMBLERS_MAP[architecture],
     [architecture],
