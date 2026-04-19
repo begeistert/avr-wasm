@@ -52,10 +52,25 @@ done
 
 sed -i '/^development=/s/true/false/' bfd/development.sh
 
-# Prevent emar's --plugin check from failing in libiberty's configure.
-# emscripten's emar (llvm-ar) does not support the --plugin flag; without
-# this override the automake AM_PROG_AR probe fails and configure falls back
-# to link tests that are then blocked by GCC_NO_EXECUTABLES.
+# Prevent AM_PROG_AR from setting AR="emar --plugin liblto_plugin.so".
+#
+# llvm-ar (emar) advertises "--plugin=<string>  ignored for compatibility",
+# so the automake AM_PROG_AR probe succeeds and sets
+#   AR="emar --plugin liblto_plugin.so"
+# But liblto_plugin.so does not exist in emscripten.  Every subsequent
+# AC_LINK_IFELSE step that needs to create a test archive then fails, which
+# causes GCC_NO_EXECUTABLES to fire and makes AC_SEARCH_LIBS abort fatally
+# inside libiberty's sub-configure (triggered by make, not by emconfigure).
+#
+# We need am_cv_ar_has_plugin=no to be visible to EVERY configure script,
+# including the libiberty sub-configure that make spawns as a fresh process.
+# Exporting the variable alone is insufficient for some autoconf versions
+# that do not import *_cv_* env vars into the cache automatically.  Writing
+# to CONFIG_SITE guarantees the value is sourced at the very top of every
+# ./configure script before any AC_CACHE_VAL check runs.
+_emsc_site=$(mktemp /tmp/emscripten-site.XXXXXX)
+printf 'am_cv_ar_has_plugin=no\n' > "$_emsc_site"
+export CONFIG_SITE="$_emsc_site"
 export am_cv_ar_has_plugin=no
 
 work_dir=$(mktemp -d -t "avr-ld.XXXXXX")
