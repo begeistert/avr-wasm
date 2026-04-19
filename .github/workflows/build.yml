@@ -13,7 +13,6 @@ on:
 
 env:
   CHECKOUT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-  CHECKOUT_ENV: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'production' || 'development'}}
 
 jobs:
   build:
@@ -72,4 +71,3 @@ jobs:
         with:
           name: dists
           path: ${{ steps.find-dists.outputs.dirs }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
