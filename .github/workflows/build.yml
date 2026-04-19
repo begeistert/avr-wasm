@@ -1,4 +1,4 @@
-name: CI
+name: Build
 
 on:
   push:
@@ -13,16 +13,16 @@ on:
 
 env:
   CHECKOUT_REF: ${{ github.event.pull_request.head.sha || github.sha }}
-  CHECKOUT_ENV: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && 'production' || 'development'}}
+  BINUTILS_BRANCH: binutils-2_45-branch
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    if: "${{ github.event_name != 'push' || !startsWith(github.ref, 'refs/pull/') }}"
+    if: github.event_name != 'push' || !startsWith(github.ref, 'refs/pull/')
 
     permissions:
-      id-token: write
+      contents: write
 
     steps:
       - uses: actions/checkout@v5
@@ -33,43 +33,49 @@ jobs:
 
       - uses: crazy-max/ghaction-github-runtime@v3
 
-      - uses: pnpm/action-setup@v4
+      - name: Build avr-as
+        run: |
+          docker buildx build \
+            --progress=plain \
+            --build-arg=BRANCH=${{ env.BINUTILS_BRANCH }} \
+            --cache-to=type=gha,mode=max,scope=gas \
+            --cache-from=type=gha,scope=gas \
+            --output=type=local,dest=dist \
+            src/gas
+
+      - name: Build binutils
+        run: |
+          docker buildx build \
+            --progress=plain \
+            --build-arg=BRANCH=${{ env.BINUTILS_BRANCH }} \
+            --cache-to=type=gha,mode=max,scope=binutils \
+            --cache-from=type=gha,scope=binutils \
+            --output=type=local,dest=dist \
+            src/binutils
+
+      - name: Build avr-ld
+        run: |
+          docker buildx build \
+            --progress=plain \
+            --build-arg=BRANCH=${{ env.BINUTILS_BRANCH }} \
+            --cache-to=type=gha,mode=max,scope=avr-ld \
+            --cache-from=type=gha,scope=avr-ld \
+            --output=type=local,dest=dist \
+            src/avr-ld
+
+      - name: Upload artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
         with:
-          version: latest
+          name: avr-wasm
+          path: dist/
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build
-        run: pnpm build
-
-      - name: Publish
+      - name: Create GitHub Release
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
-        id: publish
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          pnpm config set '//registry.npmjs.org/:_authToken' '${{ secrets.NPM_TOKEN }}'
-          pnpm -r publish --provenance --access public --no-git-checks
+          gh release create "${{ github.ref_name }}" \
+            --generate-notes \
+            dist/*
 
-      - name: Publish (dry-run)
-        if: steps.publish.outcome != 'success'
-        run: pnpm -r publish --dry-run --no-git-checks
-
-      - name: Fild dist directories
-        id: find-dists
-        run: |
-          echo 'dirs<<EOF' >> $GITHUB_OUTPUT
-          for dir in $(find . -type d -name "*dist" -not -path "*/node_modules/*"); do
-            echo $dir >> $GITHUB_OUTPUT
-          done
-          echo 'EOF' >> $GITHUB_OUTPUT
-
-      - uses: actions/upload-artifact@v5
-        with:
-          name: dists
-          path: ${{ steps.find-dists.outputs.dirs }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
