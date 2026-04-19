@@ -117,7 +117,6 @@
             const linkInputs = new Map([
                 ["program.o",                          objectBytes],
                 [`${libDir}/${req.crt}`, await loadLibc(req.arch, req.crt)],
-                [`${libDir}/crtn.o`,     await loadLibc(req.arch, "crtn.o")],
                 [`${libDir}/libc.a`,     await loadLibc(req.arch, "libc.a")],
                 [`${libDir}/libm.a`,     await loadLibc(req.arch, "libm.a")],
             ]);

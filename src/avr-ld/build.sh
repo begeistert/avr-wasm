@@ -111,11 +111,16 @@ install -D "ld/ld-new" "$output_dir/avr-ld.js"
 # Emscripten's FS at runtime.  We keep the upstream layout so the same
 # `-L/usr/lib/avr/lib/<arch>` / crt path conventions used by the AVR
 # toolchain documentation continue to work unchanged.
+#
+# Note: Debian's avr-libc ships only libc.a, libm.a and the per-MCU
+# crt<mcu>.o startup objects under /usr/lib/avr/lib/<arch>/.  There is
+# no separate crtn.o (the device CRT object already includes the
+# equivalent finalisation code), so we don't try to copy one.
 for arch in "${!arch_families[@]}"; do
     src_dir="/usr/lib/avr/lib/$arch"
     dst_dir="$output_dir/avr-libc/$arch"
     mkdir -p "$dst_dir"
-    for f in libc.a libm.a crtn.o; do
+    for f in libc.a libm.a; do
         if [ -f "$src_dir/$f" ]; then
             install -m 0644 "$src_dir/$f" "$dst_dir/$f"
         fi
@@ -127,7 +132,7 @@ for key in "${!device_crts[@]}"; do
     crt="${key##*:}"
     src_dir="/usr/lib/avr/lib/$arch"
     dst_dir="$output_dir/avr-libc/$arch"
-    if [ "$crt" != "crtn.o" ] && [ -f "$src_dir/$crt" ]; then
+    if [ -f "$src_dir/$crt" ]; then
         install -m 0644 "$src_dir/$crt" "$dst_dir/$crt"
     fi
 done

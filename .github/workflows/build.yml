@@ -125,12 +125,11 @@ jobs:
         run: |
           test -s dist/avr-ld.js
           echo "avr-ld.js exists and is non-empty"
-          # Sidecar avr-libc tree (libc.a / libm.a / crtn.o per family,
+          # Sidecar avr-libc tree (libc.a / libm.a per family,
           # plus device-specific crt<mcu>.o objects).
           for f in \
               dist/avr-libc/avr5/libc.a \
               dist/avr-libc/avr5/libm.a \
-              dist/avr-libc/avr5/crtn.o \
               dist/avr-libc/avr5/crtm328p.o \
               dist/avr-libc/avr6/libc.a \
               dist/avr-libc/avr6/crtm2560.o \

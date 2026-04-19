@@ -88,9 +88,9 @@ objcopy.js
 index.html         (provided)
 pipeline.js        (provided)
 avr-libc/
-├── avr5/{libc.a,libm.a,crtn.o,crtm328p.o}
-├── avr6/{libc.a,libm.a,crtn.o,crtm2560.o}
-└── avr25/{libc.a,libm.a,crtn.o,crtt85.o}
+├── avr5/{libc.a,libm.a,crtm328p.o}
+├── avr6/{libc.a,libm.a,crtm2560.o}
+└── avr25/{libc.a,libm.a,crtt85.o}
 ```
 
 ## 2.  Build & run

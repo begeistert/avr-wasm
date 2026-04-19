@@ -30,7 +30,6 @@ your-project/
 │   ├── avr5/
 │   │   ├── libc.a
 │   │   ├── libm.a
-│   │   ├── crtn.o
 │   │   └── crtm328p.o    ← per-device CRT object
 │   ├── avr6/…
 │   └── avr25/…
@@ -93,7 +92,7 @@ await createAvrLd({
     // Mirror the avr-libc sidecar tree into MEMFS so the linker can
     // resolve -L/usr/lib/avr/lib/<arch> and the crt object path.
     m.FS.mkdirTree(libDir);
-    for (const name of [crtObject, "crtn.o", "libc.a", "libm.a"]) {
+    for (const name of [crtObject, "libc.a", "libm.a"]) {
       m.FS.writeFile(
         `${libDir}/${name}`,
         readFileSync(`./avr-libc/${archFamily}/${name}`),
@@ -159,7 +158,6 @@ MyMauiApp/
             ├── avr5/
             │   ├── libc.a
             │   ├── libm.a
-            │   ├── crtn.o
             │   └── crtm328p.o
             ├── avr6/…
             └── avr25/…
@@ -273,7 +271,7 @@ window.runPipeline = async function (asmSource) {
       // Fetch the avr-libc sidecar files (shipped next to avr-ld.js)
       // and inject them into MEMFS at the path the linker expects.
       m.FS.mkdirTree(libDir);
-      for (const name of ["crtm328p.o", "crtn.o", "libc.a", "libm.a"]) {
+      for (const name of ["crtm328p.o", "libc.a", "libm.a"]) {
         const r = await fetch(`avr-libc/avr5/${name}`);
         m.FS.writeFile(`${libDir}/${name}`,
           new Uint8Array(await r.arrayBuffer()));
