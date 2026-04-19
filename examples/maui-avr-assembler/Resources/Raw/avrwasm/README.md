@@ -11,9 +11,9 @@ Resources/Raw/avrwasm/
 ├── avr-ld.js                ◄ from the avr-wasm GitHub Release
 ├── objcopy.js               ◄ from the avr-wasm GitHub Release
 └── avr-libc/                ◄ from the avr-wasm GitHub Release
-    ├── avr5/{libc.a,libm.a,crtm328p.o}
-    ├── avr6/{libc.a,libm.a,crtm2560.o}
-    └── avr25/{libc.a,libm.a,crtt85.o}
+    ├── avr5/{libc.a,libm.a,crtatmega328p.o}
+    ├── avr6/{libc.a,libm.a,crtatmega2560.o}
+    └── avr25/{libc.a,libm.a,crtattiny85.o}
 ```
 
 These artifacts are produced by the `Build` GitHub Actions workflow at

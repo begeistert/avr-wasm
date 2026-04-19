@@ -24,10 +24,10 @@ public partial class MainPage : ContentPage
     /// </summary>
     private static readonly DeviceInfo[] Devices =
     [
-        new("Arduino Uno (ATmega328P)",  "atmega328p", "avr5",  "crtm328p.o"),
-        new("Arduino Nano (ATmega328P)", "atmega328p", "avr5",  "crtm328p.o"),
-        new("Arduino Mega (ATmega2560)", "atmega2560", "avr6",  "crtm2560.o"),
-        new("ATtiny85",                  "attiny85",   "avr25", "crtt85.o"),
+        new("Arduino Uno (ATmega328P)",  "atmega328p", "avr5",  "crtatmega328p.o"),
+        new("Arduino Nano (ATmega328P)", "atmega328p", "avr5",  "crtatmega328p.o"),
+        new("Arduino Mega (ATmega2560)", "atmega2560", "avr6",  "crtatmega2560.o"),
+        new("ATtiny85",                  "attiny85",   "avr25", "crtattiny85.o"),
     ];
 
     public MainPage()

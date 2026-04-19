@@ -30,7 +30,7 @@ your-project/
 │   ├── avr5/
 │   │   ├── libc.a
 │   │   ├── libm.a
-│   │   └── crtm328p.o    ← per-device CRT object
+│   │   └── crtatmega328p.o    ← per-device CRT object
 │   ├── avr6/…
 │   └── avr25/…
 └── assemble.mjs          ← your code
@@ -74,7 +74,7 @@ await createAvrAs({
 // ── Step 2: Link .o → .elf ──────────────────────────────────────────────────
 const archFamily = "avr5";
 const ldEmulation = "avr5";
-const crtObject  = "crtm328p.o";
+const crtObject  = "crtatmega328p.o";
 const libDir     = `/usr/lib/avr/lib/${archFamily}`;
 
 let elfBytes;
@@ -158,7 +158,7 @@ MyMauiApp/
             ├── avr5/
             │   ├── libc.a
             │   ├── libm.a
-            │   └── crtm328p.o
+            │   └── crtatmega328p.o
             ├── avr6/…
             └── avr25/…
 ```
@@ -262,7 +262,7 @@ window.runPipeline = async function (asmSource) {
   await Module_avr_ld({         // global set by avr-ld.js
     arguments: [
       "-m", "avr5",
-      `${libDir}/crtm328p.o`,
+      `${libDir}/crtatmega328p.o`,
       "program.o",
       `-L${libDir}`, "-lc",
       "-o", "program.elf",
@@ -271,7 +271,7 @@ window.runPipeline = async function (asmSource) {
       // Fetch the avr-libc sidecar files (shipped next to avr-ld.js)
       // and inject them into MEMFS at the path the linker expects.
       m.FS.mkdirTree(libDir);
-      for (const name of ["crtm328p.o", "libc.a", "libm.a"]) {
+      for (const name of ["crtatmega328p.o", "libc.a", "libm.a"]) {
         const r = await fetch(`avr-libc/avr5/${name}`);
         m.FS.writeFile(`${libDir}/${name}`,
           new Uint8Array(await r.arrayBuffer()));

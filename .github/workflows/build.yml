@@ -130,11 +130,11 @@ jobs:
           for f in \
               dist/avr-libc/avr5/libc.a \
               dist/avr-libc/avr5/libm.a \
-              dist/avr-libc/avr5/crtm328p.o \
+              dist/avr-libc/avr5/crtatmega328p.o \
               dist/avr-libc/avr6/libc.a \
-              dist/avr-libc/avr6/crtm2560.o \
+              dist/avr-libc/avr6/crtatmega2560.o \
               dist/avr-libc/avr25/libc.a \
-              dist/avr-libc/avr25/crtt85.o; do
+              dist/avr-libc/avr25/crtattiny85.o; do
               test -s "$f" || { echo "missing $f"; exit 1; }
           done
           echo "avr-libc sidecar files present"

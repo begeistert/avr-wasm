@@ -88,9 +88,9 @@ objcopy.js
 index.html         (provided)
 pipeline.js        (provided)
 avr-libc/
-├── avr5/{libc.a,libm.a,crtm328p.o}
-├── avr6/{libc.a,libm.a,crtm2560.o}
-└── avr25/{libc.a,libm.a,crtt85.o}
+├── avr5/{libc.a,libm.a,crtatmega328p.o}
+├── avr6/{libc.a,libm.a,crtatmega2560.o}
+└── avr25/{libc.a,libm.a,crtattiny85.o}
 ```
 
 ## 2.  Build & run
@@ -118,7 +118,7 @@ dotnet build -t:Run -f net9.0-android
    `HybridWebView.InvokeJavaScriptAsync<CompileResult>("compile", …)`
    with a `CompileRequest` carrying the source, the `-mmcu` value,
    the avr-libc arch family (`avr5`, `avr6`, `avr25`, …) and the name
-   of the device CRT object (`crtm328p.o`, …).
+   of the device CRT object (`crtatmega328p.o`, …).
 3. `pipeline.js` instantiates a fresh `avr-as` Module, writes the
    source string into MEMFS, runs the assembler, then chains the same
    pattern through `avr-ld` (after fetching the avr-libc sidecar files

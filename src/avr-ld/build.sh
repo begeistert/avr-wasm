@@ -113,17 +113,22 @@ install -D "ld/ld-new" "$output_dir/avr-ld.js"
 # toolchain documentation continue to work unchanged.
 #
 # Note: Debian's avr-libc ships only libc.a, libm.a and the per-MCU
-# crt<mcu>.o startup objects under /usr/lib/avr/lib/<arch>/.  There is
-# no separate crtn.o (the device CRT object already includes the
-# equivalent finalisation code), so we don't try to copy one.
+# crt<full-mcu-name>.o startup objects under /usr/lib/avr/lib/<arch>/
+# (e.g. crtatmega328p.o, not the legacy crtm328p.o short name).  There
+# is no separate crtn.o (the device CRT object already includes the
+# equivalent finalisation code), so we don't try to copy one.  We fail
+# the build loudly if any required file is missing, otherwise the
+# packaged tarball would silently be incomplete.
 for arch in "${!arch_families[@]}"; do
     src_dir="/usr/lib/avr/lib/$arch"
     dst_dir="$output_dir/avr-libc/$arch"
     mkdir -p "$dst_dir"
     for f in libc.a libm.a; do
-        if [ -f "$src_dir/$f" ]; then
-            install -m 0644 "$src_dir/$f" "$dst_dir/$f"
+        if [ ! -f "$src_dir/$f" ]; then
+            echo "error: required avr-libc file $src_dir/$f not found" >&2
+            exit 1
         fi
+        install -m 0644 "$src_dir/$f" "$dst_dir/$f"
     done
 done
 
@@ -132,7 +137,9 @@ for key in "${!device_crts[@]}"; do
     crt="${key##*:}"
     src_dir="/usr/lib/avr/lib/$arch"
     dst_dir="$output_dir/avr-libc/$arch"
-    if [ -f "$src_dir/$crt" ]; then
-        install -m 0644 "$src_dir/$crt" "$dst_dir/$crt"
+    if [ ! -f "$src_dir/$crt" ]; then
+        echo "error: required avr-libc CRT object $src_dir/$crt not found" >&2
+        exit 1
     fi
+    install -m 0644 "$src_dir/$crt" "$dst_dir/$crt"
 done
