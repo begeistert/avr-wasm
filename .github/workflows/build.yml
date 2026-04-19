@@ -125,6 +125,20 @@ jobs:
         run: |
           test -s dist/avr-ld.js
           echo "avr-ld.js exists and is non-empty"
+          # Sidecar avr-libc tree (libc.a / libm.a / crtn.o per family,
+          # plus device-specific crt<mcu>.o objects).
+          for f in \
+              dist/avr-libc/avr5/libc.a \
+              dist/avr-libc/avr5/libm.a \
+              dist/avr-libc/avr5/crtn.o \
+              dist/avr-libc/avr5/crtm328p.o \
+              dist/avr-libc/avr6/libc.a \
+              dist/avr-libc/avr6/crtm2560.o \
+              dist/avr-libc/avr25/libc.a \
+              dist/avr-libc/avr25/crtt85.o; do
+              test -s "$f" || { echo "missing $f"; exit 1; }
+          done
+          echo "avr-libc sidecar files present"
 
       - name: Upload avr-ld artifact
         uses: actions/upload-artifact@v4
