@@ -14,12 +14,6 @@ output_dir=$(realpath "$output_dir")
 
 sed -i '/^development=/s/true/false/' bfd/development.sh
 
-# Prevent emar's --plugin check from failing in libiberty's configure.
-# emscripten's emar (llvm-ar) does not support the --plugin flag; without
-# this override the automake AM_PROG_AR probe fails and configure falls back
-# to link tests that are then blocked by GCC_NO_EXECUTABLES.
-export am_cv_ar_has_plugin=no
-
 work_dir=$(mktemp -d -t "gas.avr.XXXXXX")
 cd "$work_dir"
 
