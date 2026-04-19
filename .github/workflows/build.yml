@@ -59,7 +59,7 @@ jobs:
         if: steps.publish.outcome != 'success'
         run: pnpm -r publish --dry-run --no-git-checks
 
-      - name: Fild dist directories
+      - name: Find dist directories
         id: find-dists
         run: |
           echo 'dirs<<EOF' >> $GITHUB_OUTPUT

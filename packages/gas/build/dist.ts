@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 const supportedTargets = [
   "armv7-linux-gnueabihf",
   "aarch64-linux-gnu",
+  "avr",
   "mips-linux-gnu",
   "mips64-linux-gnuabi64",
   "powerpc-linux-gnu",
