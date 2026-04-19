@@ -9,7 +9,8 @@ Each tool is a self-contained `.js` file with the WASM binary embedded — no se
 | File | Description |
 |------|-------------|
 | `avr-as.js` | GNU Assembler for AVR — assembles `.s` → `.o` |
-| `avr-ld.js` | GNU Linker for AVR with avr-libc embedded — links `.o` → `.elf` |
+| `avr-ld.js` | GNU Linker for AVR — links `.o` → `.elf` |
+| `avr-libc/<arch>/…` | C runtime objects (`crt*.o`) and archives (`libc.a`, `libm.a`) the linker needs at runtime, shipped as a sidecar tree alongside `avr-ld.js` |
 | `objcopy.js` | Converts `.elf` → Intel HEX (`.hex`) |
 | `objdump.js` | Disassembles / inspects ELF binaries |
 | `nm.js`, `readelf.js`, `size.js`, … | Additional binutils tools |
@@ -37,15 +38,24 @@ See [`docs/AVR_TOOLCHAIN.md`](docs/AVR_TOOLCHAIN.md) for a full end-to-end guide
 
 To add more devices edit [`src/avr-ld/devices.sh`](src/avr-ld/devices.sh) (one line per device) and rebuild.
 
+## Examples
+
+| Path | Description |
+|------|-------------|
+| [`examples/maui-avr-assembler`](examples/maui-avr-assembler) | .NET 9 MAUI app (iOS / Mac Catalyst / Android) that takes an assembly string, runs the full `.s → .o → .elf → .hex` pipeline inside a `HybridWebView`, and shows the resulting Intel HEX. |
+
 ## Repository layout
 
 ```
 src/
   gas/          Dockerfile + build.sh → avr-as.js
   binutils/     Dockerfile + build.sh → objcopy.js, objdump.js, …
-  avr-ld/       Dockerfile + build.sh + devices.sh → avr-ld.js
+  avr-ld/       Dockerfile + build.sh + devices.sh → avr-ld.js + avr-libc/
+examples/
+  maui-avr-assembler/  Cross-platform MAUI app showcasing the toolchain
 docs/
-  AVR_TOOLCHAIN.md   End-to-end pipeline tutorial
+  AVR_TOOLCHAIN.md     End-to-end pipeline tutorial
+  DESKTOP_AND_MAUI.md  Hosting the tools in Node.js or a MAUI WebView
 ```
 
 ## Building locally
