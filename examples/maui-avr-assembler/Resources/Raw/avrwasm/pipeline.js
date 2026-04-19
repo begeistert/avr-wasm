@@ -48,6 +48,8 @@
             printErr:  pipe,
             noExitRuntime: false,
             // emscripten calls quit() with the program's exit code.
+            // It runs after main() returns but before postRun, so the
+            // captured value is reliable inside the postRun callback.
             quit: (code) => { exitCode = code; },
             preRun: [(m) => {
                 for (const [path, bytes] of inputs) {
@@ -66,8 +68,10 @@
             }],
         });
 
-        // Some emscripten builds do not call `quit` for normal exit;
-        // a missing output therefore implies a tool error.
+        // A non-zero exit, or an output file we could not read, both
+        // mean the tool did not produce the expected artifact.  The
+        // captured stdout/stderr is the user's only diagnostic so we
+        // pass it through verbatim.
         if (exitCode !== 0 || !outputBytes) {
             const err = new Error(log.join("\n") || `${label} failed`);
             err.tool = label;

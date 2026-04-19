@@ -65,7 +65,7 @@ sed -i '/^development=/s/true/false/' bfd/development.sh
 #
 # The only configure-time hint we keep is am_cv_ar_has_plugin to
 # silence the (harmless) automake AM_PROG_AR --plugin probe noise.
-_emsc_site=$(mktemp /tmp/emscripten-site.XXXXXX)
+_emsc_site=$(mktemp -t emscripten-site.XXXXXX)
 printf 'am_cv_ar_has_plugin=no\n' > "$_emsc_site"
 export CONFIG_SITE="$_emsc_site"
 
